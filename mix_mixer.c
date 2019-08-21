@@ -11,6 +11,7 @@
 #endif
 
 #ifndef MIX_MIXER_HEADER_ONLY
+#include "stdio.h"
 #define TODO_LOGGING(Name) printf("TODO(%s): Logging %s@%d\n", #Name, __FUNCTION__, __LINE__)
 
 #define DR_FLAC_IMPLEMENTATION
@@ -294,7 +295,7 @@ mix__Resample(SDL_AudioFormat SrcFormat, int SrcChannels,
 			}
 			else
 			{
-				Sint32 Temp[2] = {};
+				Sint32 Temp[2] = {0};
 				SDL_memcpy(&Temp[0], ((Sint8 *)Src[0] + SrcChannelIndex*SrcFormatSize), SrcFormatSize);
 				SDL_memcpy(&Temp[1], ((Sint8 *)Src[1] + SrcChannelIndex*SrcFormatSize), SrcFormatSize);
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -500,7 +501,7 @@ mix__OpenAudioStream(const char *FileName)
 				return NULL;
 			}
 			Result->Frequency = Result->Flac->sampleRate;
-			Result->MaxSamples = Result->Flac->totalSampleCount;
+			Result->MaxSamples = (int)Result->Flac->totalSampleCount;
 			Result->Channels = Result->Flac->channels;
 			Result->Format = AUDIO_S32SYS;
 		} break;
@@ -516,7 +517,7 @@ mix__OpenAudioStream(const char *FileName)
 				return NULL;
 			}
 			Result->Frequency = Result->Wav->sampleRate;
-			Result->MaxSamples = Result->Wav->totalSampleCount;
+			Result->MaxSamples = (int)Result->Wav->totalSampleCount;
 			Result->Channels = Result->Wav->channels;
 			Result->Format = AUDIO_S32SYS;
 		} break;
@@ -574,16 +575,16 @@ mix__ReadAudioStream(audio_stream *Stream, int SamplesCount, void *Buffer)
 	{
 		case MixSoundType_Flac:
 		{
-			SamplesRead = drflac_read_s32(Stream->Flac, SamplesCount, (Sint32 *)Buffer);
+			SamplesRead = (int)drflac_read_s32(Stream->Flac, SamplesCount, (Sint32 *)Buffer);
 		} break;
 		case MixSoundType_Wav:
 		{
-			SamplesRead = drwav_read_s32(Stream->Wav, SamplesCount, (Sint32 *)Buffer);
+			SamplesRead = (int)drwav_read_s32(Stream->Wav, SamplesCount, (Sint32 *)Buffer);
 		} break;
 		case MixSoundType_Mp3:
 		{
 			Uint64 FramesToRead = SamplesCount/Stream->Channels;
-			SamplesRead = drmp3_read_f32(Stream->Mp3, FramesToRead, (float *)Buffer);
+			SamplesRead = (int)drmp3_read_f32(Stream->Mp3, FramesToRead, (float *)Buffer);
 			SamplesRead *= Stream->Channels;
 		} break;
 		case MixSoundType_Vorbis:
@@ -689,12 +690,12 @@ mix__SeekAudioStream(audio_stream *Stream, Uint64 SampleIndex)
 		} break;
 		case MixSoundType_Mp3:
 		{
-			int FrameToSeek = SampleIndex/Stream->Mp3->channels;
+			int FrameToSeek = (int)SampleIndex/Stream->Mp3->channels;
 			WasSuccess = drmp3_seek_to_frame(Stream->Mp3, FrameToSeek);
 		} break;
 		case MixSoundType_Vorbis:
 		{
-			WasSuccess = stb_vorbis_seek(Stream->Vorbis, SampleIndex);
+			WasSuccess = (int)stb_vorbis_seek(Stream->Vorbis, (unsigned int)SampleIndex);
 		} break;
 	}
 	return WasSuccess;
@@ -710,7 +711,7 @@ mix__RefillStream(sts_mixer_sample_t* Sample, void* UserData)
 	const int SamplesToRead = Song->TempBufferSize/sizeof(float)/2;
 	const int SamplesRead = mix__ReadAudioStream(Song->AudioStream, SamplesToRead, (float *)Song->TempBuffer);
 	const int BytesRead = SamplesRead*sizeof(float);
-	const int SamplesToWrite = (int)SDL_ceilf((float)Song->Stream.sample.length*(float)SamplesRead/(float)SamplesToRead);
+	const unsigned int SamplesToWrite = (int)SDL_ceilf((float)Song->Stream.sample.length*(float)SamplesRead/(float)SamplesToRead);
 	const int BytesToWrite = (SamplesToWrite/Song->AudioStream->Channels*
 	                          Song->AudioStream->Channels*sizeof(float));
 	MIX_MIXER_ASSERT(SamplesToWrite <= Song->Stream.sample.length);

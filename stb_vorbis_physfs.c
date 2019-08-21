@@ -1321,7 +1321,7 @@ static uint8 get8(vorb *z)
    #elif !defined(STB_VORBIS_NO_PHYSFS)
    {
       uint8 c;
-      int s = PHYSFS_readBytes(z->f, &c, 1);
+      int s = (int)PHYSFS_readBytes(z->f, &c, 1);
       if (!s) { z->eof = TRUE; return 0; }
       return c;
    }
@@ -1378,7 +1378,7 @@ static void skip(vorb *z, int n)
    }
    #elif !defined(STB_VORBIS_NO_PHYSFS)
    {
-      long x = PHYSFS_tell(z->f);
+      long x = (long)PHYSFS_tell(z->f);
       PHYSFS_seek(z->f, x+n);
    }
    #endif
